@@ -1,8 +1,8 @@
+import math
 import decimal
 from decimal import Decimal, getcontext
 
 D = Decimal
-
 
 def pi():
     """Compute Pi to the current precision."""
@@ -162,6 +162,13 @@ def asin(x):
     if abs(x) > 1:
         raise ValueError("Domain error: asin accepts -1 <= x <= 1")
     
+    if x == -1:
+        return pi() / -2
+    elif x == 0:
+        return D(0)
+    elif x == 1:
+        return pi() / 2
+    
     return atan2(x, D.sqrt(1 - x ** 2))
 
 # The version below is actually overwritten by the version using atan2 below
@@ -198,21 +205,23 @@ def acos(x):
     """Return the arc cosine (measured in radians) of Decimal x."""
     if abs(x) > 1:
         raise ValueError("Domain error: acos accepts -1 <= x <= 1")
+
+    if x == -1:
+        return pi()
+    elif x == 0:
+        return pi() / 2
+    elif x == 1:
+        return D(0)
     
-    getcontext().prec += 1
-    a =  pi() / 2 - atan2(x, D.sqrt(1 - x ** 2))
-    getcontext().prec -= 1
-    return +a
+    return pi() / 2 - atan2(x, D.sqrt(1 - x ** 2))
 
 def tan(x):
     """Return the tangent of Decimal x (measured in radians)."""
-    t = sin(x) / cos(x)
-    return +t
+    return +(sin(x) / cos(x))
 
 def tanh(x):
     """Return the hyperbolic tangent of Decimal x."""
-    t = sinh(x) / cosh(x)
-    return +t
+    return +(sinh(x) / cosh(x))
 
 def atan(x):
     """Return the arc tangent (measured in radians) of Decimal x."""
@@ -299,7 +308,7 @@ def log(x, base=None):
         log_base = log(base)
         approx = math.log(x, base)
 
-    lasts, s = 0, Decimal(repr(approx))
+    lasts, s = 0, D(repr(approx))
     while lasts != s:
         lasts = s
         s = s - 1 + x / exp(s)
@@ -310,3 +319,31 @@ def log(x, base=None):
 def log10(x):
     """log10(x) -> the base 10 logarithm of Decimal x."""
     return log(x, D(10))
+
+sqrt = D.sqrt
+pow = D.__pow__
+
+def degrees(x):
+    """degrees(x) -> converts Decimal angle x from radians to degrees"""
+    return +(x * 180 / pi())
+
+def radians(x):
+    """radians(x) -> converts Decimal angle x from degrees to radians"""
+    return +(x * pi() / 180)
+
+def ceil(x):
+    """Return the smallest integral value >= x."""
+    return x.to_integral(rounding=decimal.ROUND_CEILING)
+
+def floor(x):
+    """Return the largest integral value <= x."""
+    return x.to_integral(rounding=decimal.ROUND_FLOOR)
+
+def hypot(x, y):
+    """Return the Euclidean distance, sqrt(x*x + y*y)."""
+    return sqrt(x * x + y * y)
+
+
+__all__ = ['acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'cosh', 'degrees',
+           'e', 'exp', 'floor', 'golden_ratio', 'hypot', 'log', 'log10', 'pi',
+           'pow', 'radians', 'sign', 'sin', 'sinh', 'sqrt', 'tan', 'tanh']
