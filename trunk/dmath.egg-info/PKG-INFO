@@ -1,0 +1,18 @@
+Metadata-Version: 1.0
+Name: dmath
+Version: 0.9
+Summary: Math routines for Python's Decimal type
+Home-page: http://code.google.com/p/dmath
+Author: Brian Beck, Christopher Hesse
+Author-email: exogen@gmail.com, christopher.hesse@gmail.com
+License: MIT
+Download-URL: http://dmath.googlecode.com/svn/trunk/
+Description: UNKNOWN
+Keywords: decimal math precision trigonometry trigonometric
+Platform: UNKNOWN
+Classifier: Development Status :: 4 - Beta
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Topic :: Scientific/Engineering :: Mathematics
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
