@@ -1,7 +1,6 @@
 setup.py
 dist/dmath-0.9-py2.4.egg
 dmath/__init__.py
-dmath/tests.py
 dmath.egg-info/PKG-INFO
 dmath.egg-info/SOURCES.txt
 dmath.egg-info/dependency_links.txt
