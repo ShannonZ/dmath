@@ -4,11 +4,14 @@ dmath v0.9.1
 Python math module for Decimal numbers.  All functions should return Decimal
 numbers.  Probably only works with real numbers.
 
-pi, exp, cos, sin from Decimal recipes at http://docs.python.org/lib/decimal-recipes.html
+pi, exp, cos, sin from Decimal recipes:
+    http://docs.python.org/lib/decimal-recipes.html
 
-float_to_decimal from Decimal FAQ at http://docs.python.org/lib/decimal-faq.html
+float_to_decimal from Decimal FAQ:
+    http://docs.python.org/lib/decimal-faq.html
 
-Copyright (c) 2006 Brian Beck <exogen@gmail.com> and Christopher Hesse <christopher.hesse@gmail.com>
+Copyright (c) 2006 Brian Beck <exogen@gmail.com>,
+                   Christopher Hesse <christopher.hesse@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
@@ -36,8 +39,7 @@ SOFTWARE.
 
 import math
 import decimal
-from decimal import Decimal, getcontext, setcontext
-from decimal import _convert_other
+from decimal import Decimal, getcontext, setcontext, _convert_other
 
 D = Decimal
 
@@ -46,7 +48,8 @@ D = Decimal
 #
 
 def float_to_decimal(f):
-    "Convert a floating point number to a Decimal with no loss of information"
+    """Convert a floating point number to a Decimal with no loss of information.
+    """
     # Transform (exactly) a float to a mantissa (0.5 <= abs(m) < 1.0) and an
     # exponent.  Double the mantissa until it is an integer.  Use the integer
     # mantissa and exponent to compute an equivalent Decimal.  If this cannot
@@ -98,9 +101,12 @@ def golden_ratio():
 # transcendental functions
 #
 
-def exp(x):
+def exp(x, context=None):
     """Return e raised to the power of x."""
-    getcontext().prec += 2
+    if context is None:
+        context = getcontext()
+    
+    context.prec += 2
     i = 0; lasts = 0; s = 1; fact = 1; num = 1
     while s != lasts:
         lasts = s    
@@ -108,39 +114,42 @@ def exp(x):
         fact *= i
         num *= x     
         s += num / fact   
-    getcontext().prec -= 2        
+    context.prec -= 2        
     return +s
 
-def log(x, base=None):
+def log(x, base=None, context=None):
     """Return the logarithm of x to the given base.
-    If the base not specified, returns the natural logarithm (base e) of x.
+    
+    If the base not specified, return the natural logarithm (base e) of x.
+    
     """
-    # TODO make sure log(e) = 1
+    if context is None:
+        context = getcontext()
     
     if x < 0:
-        return D('NaN')
+        return D('NaN', context=context)
     elif base == 1:
         raise ValueError("Base was 1!")
     elif x == base:
-        return D(1)
+        return D(1, context=context)
     elif x == 0:
-        return D('-Inf')
+        return D('-Inf', context=context)
     
-    getcontext().prec += 2    
+    context.prec += 2    
     
     if base is None:
         log_base = 1
         approx = math.log(x)
     else:
-        log_base = log(base)
+        log_base = log(base, context=context)
         approx = math.log(x, base)
 
-    lasts, s = 0, D(repr(approx))
+    lasts, s = 0, D(repr(approx), context=context)
     while lasts != s:
         lasts = s
-        s -=  1 - x / exp(s)
+        s -=  1 - x / exp(s, context=context)
     s /= log_base
-    getcontext().prec -= 2
+    context.prec -= 2
     return +s
 
 def log10(x):
@@ -151,9 +160,14 @@ def log10(x):
 # trigonometric functions
 #
 
-def sin(x):
+def sin(x, context=None):
     """Return the sine of x in radians."""
-    getcontext().prec += 2
+    if context is None:
+        context = getcontext()
+
+    # Uses the series definition of cos, see:
+    # http://en.wikipedia.org/wiki/Trigonometric_function#Series_definitions
+    context.prec += 2
     i, lasts, s, fact, num, sign = 1, 0, x, 1, x, 1
     while s != lasts:
         lasts = s    
@@ -162,14 +176,17 @@ def sin(x):
         num *= x * x
         sign *= -1
         s += num / fact * sign
-    getcontext().prec -= 2
+    context.prec -= 2
     return +s
 
-def cos(x):
+def cos(x, context=None):
     """Return the cosine of x in radians."""
-    # uses the series definition of cos, see
+    if context is None:
+        context = getcontext()
+    
+    # Uses the series definition of cos, see:
     # http://en.wikipedia.org/wiki/Trigonometric_function#Series_definitions
-    getcontext().prec += 2
+    context.prec += 2
     i = 0; lasts = 0; s = 1; fact = 1; num = 1; sign = 1
     while s != lasts:
         lasts = s    
@@ -178,12 +195,18 @@ def cos(x):
         num *= x * x
         sign = -sign
         s += num / fact * sign 
-    getcontext().prec -= 2        
+    context.prec -= 2        
     return +s
 
-def tan(x):
+def tan(x, context=None):
     """Return the tangent of x in radians."""
-    return sin(x) / cos(x)
+    if context is None:
+        context = getcontext()
+    
+    context.prec += 2
+    t = sin(x, context=context) / cos(x, context=context)
+    context.prec -= 2
+    return +t
 
 #
 # inverse trigonometric functions
@@ -219,19 +242,22 @@ def tan(x):
 #    return +s
 
 # This is way faster, I wonder if there's a downside?
-def asin(x):
+def asin(x, context=None):
     """Return the arcsine of x in radians."""
     if abs(x) > 1:
         raise ValueError("Domain error: asin accepts -1 <= x <= 1")
     
-    if x == -1:
-        return pi() / -2
-    elif x == 0:
-        return D(0)
-    elif x == 1:
-        return pi() / 2
+    if context is None:
+        context = getcontext()
     
-    return atan2(x, D.sqrt(1 - x ** 2))
+    if x == -1:
+        return pi(context=context) / -2
+    elif x == 0:
+        return D(0, context=context)
+    elif x == 1:
+        return pi(context=context) / 2
+    
+    return atan2(x, D.sqrt(1 - x ** 2), context=context)
 
 # The version below is actually overwritten by the version using atan2 below
 # it, since it is much faster. If possible, I'd like to write a fast version
@@ -263,43 +289,46 @@ def asin(x):
 #    return +s
 
 # This is way faster, I wonder if there's a downside?
-def acos(x):
+def acos(x, context=None):
     """Return the arccosine of x in radians."""
     if abs(x) > 1:
         raise ValueError("Domain error: acos accepts -1 <= x <= 1")
 
-    if x == -1:
-        return pi()
-    elif x == 0:
-        return pi() / 2
-    elif x == 1:
-        return D(0)
+    if context is None:
+        context = getcontext()
     
-    return pi() / 2 - atan2(x, D.sqrt(1 - x ** 2))
-
-def atan(x):
-    """Return the arctangent of x in radians."""
-    if x == D('-Inf'):
-        return pi() / -2
-    elif x == 0:
-        return D(0)
-    elif x == D('Inf'):
-        return pi() / 2
-    
-    if x < -1:
-        c = pi() / -2
-        x = 1 / x
-    elif x > 1:
-        c = pi() / 2
-        x = 1 / x
+    if x == 1:
+        return D(0, context=context)
     else:
-        c = 0
+        PI = pi(context=context)
+        if x == -1:
+            return PI
+        elif x == 0:
+            return PI / 2
     
-    getcontext().prec += 2
+    return PI / 2 - atan2(x, sqrt(1 - x ** 2, context=context), context=context)
+
+def atan(x, context=None):
+    """Return the arctangent of x in radians."""
+    if context is None:
+        context = getcontext()
+    
+    if x == 0:
+        return D(0, context=context)
+    elif abs(x) > 1:
+        PI = pi(context=context)
+        x_is_inf = x._isinfinity()
+        if x_is_inf:
+            return PI / D((x._sign, (2,), 0), context=context)
+        else:
+            c = PI / D((x._sign, (2,), 0), context=context)
+            x = 1 / x
+    
+    context.prec += 2
     x_squared = x ** 2
     y = x_squared / (1 + x_squared)
     y_over_x = y / x
-    i, lasts, s, coeff, num = D(0), 0, y_over_x, 1, y_over_x
+    i = D(0); lasts = 0; s = y_over_x; coeff = 1; num = y_over_x
     while s != lasts:
         lasts = s 
         i += 2
@@ -308,34 +337,36 @@ def atan(x):
         s += coeff * num
     if c:
         s = c - s
-    getcontext().prec -= 2
+    context.prec -= 2
     return +s
 
-def atan2(y, x):
+def atan2(y, x, context=context):
     """Return the arctangent of y/x in radians.
+    
     Unlike atan(y/x), the signs of both x and y are considered.
+    
     """
 # TODO check the sign function make sure this still works
 # decimal zero has a sign
     abs_y = abs(y)
     abs_x = abs(x)
-    y_is_real = (abs_y != D('Inf'))
+    y_is_real = not x._isinfinity()
     
     if x != 0:
         if y_is_real:
-            a = y and atan(y / x) or D(0)
+            a = y and atan(y / x, context=context) or D(0)
             if x < 0:
-                a += sign(y) * pi()
+                a += D((y._sign, (1,), 0)) * pi(context=context)
             return a
         elif abs_y == abs_x:
-            x = sign(x)
-            y = sign(y)
-            return pi() * (D(2) * abs(x) - x) / (D(4) * y)
+            x = D((x._sign, (1,), 0))
+            y = D((y._sign, (1,), 0))
+            return pi(context=context) * (2 - x) / (4 * y)
 
     if y != 0:
-        return atan(sign(y) * D('Inf'))
+        return atan(D((y._sign, (0,), 'F')))
     elif x < 0:
-        return sign(y) * pi()
+        return D((y._sign, (1,), 0)) * pi()
     else:
         return D(0)
 
@@ -348,7 +379,7 @@ def sinh(x):
     if x == 0:
         return D(0)
     
-    # uses the taylor series expansion of sinh, see
+    # Uses the taylor series expansion of sinh, see:
     # http://en.wikipedia.org/wiki/Hyperbolic_function#Taylor_series_expressions
     getcontext().prec += 2
     i, lasts, s, fact, num = 1, 0, x, 1, x
@@ -366,7 +397,7 @@ def cosh(x):
     if x == 0:
         return D(1)
     
-    # uses the taylor series expansion of cosh, see
+    # Uses the taylor series expansion of cosh, see:
     # http://en.wikipedia.org/wiki/Hyperbolic_function#Taylor_series_expressions
     getcontext().prec += 2
     i, lasts, s, fact, num = 0, 0, 1, 1, 1
@@ -426,21 +457,32 @@ def modf(x):
 
 def ldexp(s, e):
     """Return s*(10**e), the value of a decimal floating point number with
-    significand s and exponent e.  This function is the inverse of frexp. Note
-    that this is different from math.ldexp, which uses 2**e instead of
-    10**e."""
+    significand s and exponent e.
+    
+    This function is the inverse of frexp.  Note that this is different from
+    math.ldexp, which uses 2**e instead of 10**e.
+    
+    """
     return s*(10**e)
 
 def frexp(x):
-    """Return s and e where s*(10**e) == x.  s and e are the significand and
-    exponent, respectively of x.  This function is the inverse of ldexp. Note
-    that this is different from math.frexp, which uses 2**e instead of
-    10**e."""
+    """Return s and e where s*(10**e) == x.
+    
+    s and e are the significand and exponent, respectively of x.    
+    This function is the inverse of ldexp.  Note that this is different from
+    math.frexp, which uses 2**e instead of 10**e.
+    
+    """
     e = D(x.adjusted())
     s = D(10)**(-x.adjusted())*x
     return s, e
 
 def pow(x, y, context=None):
+    """Returns x**y (x to the power of y).
+    
+    x cannot be negative if y is fractional.
+    
+    """
     context, x, y = _initialize(context, x, y)
     # if y is an integer, just call regular pow
     if y._isinteger():
@@ -451,10 +493,11 @@ def pow(x, y, context=None):
     return exp(y * log(x))
 
 def tetrate(x, y, context=None):
-    """returns x recursively raised to the power of x, y times.
-    y must be a natural number
+    """Return x recursively raised to the power of x, y times. ;)
     
-    ;)"""
+    y must be a natural number.
+    
+    """
     context, x, y = _initialize(context, x, y)
 
     if not y._isinteger():
@@ -484,7 +527,8 @@ def _initialize(context, *args):
 # TODO should something else be seeing NotImplemented?
         e = _convert_other(arg)
         if e is NotImplemented:
-            raise TypeError, "unsupported operand type: '%s' (if it's a float, try the float_to_decimal function)" % (type(e).__name__,)
+            raise TypeError("unsupported operand type: '%s'" \
+                            "(if it's a float, try the float_to_decimal function)" % (type(e).__name__,))
         r.append(e)
     
     return r
@@ -497,14 +541,15 @@ def _sign(x):
     else:
         return D(-1)
 
+
 sqrt = D.sqrt
 fabs = abs
 fmod = D.__mod__
 
 __all__ = ['acos', 'asin', 'atan', 'atan2', 'ceil', 'cos', 'cosh', 'degrees',
-'e', 'exp', 'fabs', 'floor', 'fmod', 'frexp', 'golden_ratio', 'hypot', 'ldexp',
-'log', 'log10', 'modf', 'pi', 'pow', 'radians', 'sgn', 'sin', 'sinh', 'sqrt',
-'tan', 'tanh', 'tetrate']
+           'e', 'exp', 'fabs', 'floor', 'fmod', 'frexp', 'golden_ratio',
+           'hypot', 'ldexp', 'log', 'log10', 'modf', 'pi', 'pow', 'radians',
+           'sgn', 'sin', 'sinh', 'sqrt', 'tan', 'tanh', 'tetrate']
 
 if __name__ == '__main__':
     # TODO put some test functions down here
