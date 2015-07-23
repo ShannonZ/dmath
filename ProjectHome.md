@@ -1,0 +1,1 @@
+dmath provides math functions for use with Python's arbitrary-precision Decimal type. These functions include acos, asin, atan, atan2, ceil, cos, cosh, degrees, e, exp, floor, hypot, log, log10, pi, radians, sin, sinh, tan, and tanh.
